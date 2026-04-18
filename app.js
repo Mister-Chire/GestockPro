@@ -329,17 +329,30 @@ function actualizarLogo(tema) {
 function renderTabs() {
   const tabsContainer = document.getElementById('tabsContainer');
   if (!tabsContainer) return;
+  const S = (p,vb) => `<svg width="13" height="13" viewBox="${vb||'0 0 24 24'}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">${p}</svg>`;
+  const ic = {
+    dashboard:    S('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>'),
+    clientes:     S('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    crono:        S('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/>'),
+    devoluciones: S('<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.87"/>'),
+    garantias:    S('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'),
+    agenda:       S('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+    itv:          S('<rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'),
+    manual:       S('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'),
+    vacaciones:   S('<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'),
+    caja:         S('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'),
+  };
   const tabs = [
-    { id: 'dashboard', label: '🏠 Inicio', always: true },
-    { id: 'clientes', label: '👤 Por clientes', always: true },
-    { id: 'crono', label: '📋 Listado de piezas', always: true },
-    { id: 'garantias', label: '🔧 Garantías', always: true },
-    { id: 'itv', label: '🏭 ITV', mod: 'itv' },
-    { id: 'agenda', label: '📅 Agenda', mod: 'agenda' },
-    { id: 'caja', label: '💰 Caja', mod: 'caja' },
-    { id: 'vacaciones', label: '🏖️ Vacaciones', always: true },
-    { id: 'devoluciones', label: '↩ Devoluciones', always: true },
-    { id: 'manual', label: '📖 Manual ITV', always: true },
+    { id: 'dashboard',    label: `${ic.dashboard} Inicio`,           always: true },
+    { id: 'clientes',     label: `${ic.clientes} Por Clientes`,      always: true },
+    { id: 'crono',        label: `${ic.crono} Listado de Piezas`,    always: true },
+    { id: 'devoluciones', label: `${ic.devoluciones} Devoluciones`,  always: true },
+    { id: 'garantias',    label: `${ic.garantias} Garantías`,        always: true },
+    { id: 'agenda',       label: `${ic.agenda} Agenda`,              mod: 'agenda' },
+    { id: 'itv',          label: `${ic.itv} ITV`,                    mod: 'itv' },
+    { id: 'manual',       label: `${ic.manual} Manual ITV`,          always: true },
+    { id: 'vacaciones',   label: `${ic.vacaciones} Vacaciones`,      always: true },
+    { id: 'caja',         label: `${ic.caja} Caja`,                  mod: 'caja' },
   ];
   tabsContainer.innerHTML = tabs
     .filter(t => t.always || modulos[t.mod])
@@ -349,9 +362,9 @@ function renderTabs() {
 
 function setTab(tab) {
   vistaActual = tab;
-  ['tabDashboard','tabClientes','tabCrono','tabGarantias','tabItv','tabAgenda','tabCaja','tabVacaciones'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('active', id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  const activeId = 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1);
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === activeId);
   });
   document.getElementById('viewDashboard').style.display = tab === 'dashboard' ? 'block' : 'none';
   document.getElementById('viewClientes').style.display = tab === 'clientes' ? 'block' : 'none';
