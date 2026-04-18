@@ -227,17 +227,22 @@
         <span><strong>Configura primero la política vacacional de tu empresa</strong> — días al año, tipo y días laborales de la semana.</span>
         <button class="btn-ghost" style="margin-left:auto;white-space:nowrap;flex-shrink:0;border-color:var(--yellow);color:var(--yellow)" onclick="abrirConfigVac()">Configurar →</button>
       </div>
-      <!-- Dos columnas: trabajadores | vacaciones asignadas -->
+      <!-- Tres columnas: trabajadores | asignadas | disfrutadas -->
       <div class="vac-grid">
-        <!-- Columna izquierda: trabajadores -->
+        <!-- Columna 1: trabajadores -->
         <div>
           <h3 style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Trabajadores</h3>
           <div id="vacacionesList"></div>
         </div>
-        <!-- Columna derecha: vacaciones cronológicas -->
+        <!-- Columna 2: vacaciones asignadas -->
         <div>
           <h3 style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Vacaciones asignadas</h3>
           <div id="vacacionesAsignadasList"></div>
+        </div>
+        <!-- Columna 3: vacaciones disfrutadas -->
+        <div>
+          <h3 style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Vacaciones disfrutadas</h3>
+          <div id="vacacionesDisfrutadasList"></div>
         </div>
       </div>
     </div>
@@ -515,6 +520,17 @@
       <button class="btn-ghost" onclick="cerrarConfirmDevolucion()">Cancelar</button>
       <button class="btn-primary" id="confirmDevolucionBtn" onclick="ejecutarConfirmDevolucion()">Confirmar</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== MODAL HISTORIAL VACACIONES ===== -->
+<div class="modal-overlay" id="modalHistorial" onclick="if(event.target===this)cerrarModalId('modalHistorial')">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <span class="modal-title" id="modalHistorialTitle">Historial de vacaciones</span>
+      <button class="modal-close" onclick="cerrarModalId('modalHistorial')">×</button>
+    </div>
+    <div class="modal-body" id="modalHistorialContent"></div>
   </div>
 </div>
 

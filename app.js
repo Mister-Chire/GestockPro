@@ -2323,6 +2323,7 @@ function renderVacaciones() {
   if (btnAdd) btnAdd.disabled = !configVac;
   renderWorkersVac();
   renderVacCronologicas();
+  renderVacDisfrutadas();
 }
 
 // ── Lista de trabajadores — filas horizontales compactas ────────────────────
@@ -2352,7 +2353,8 @@ function renderWorkersVac() {
           <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.nombre}</div>
           ${t.puesto ? `<div style="font-size:11px;color:var(--muted)">${t.puesto}</div>` : ''}
         </div>
-        <div style="display:flex;gap:5px;flex-shrink:0">
+        <div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap">
+          <button class="btn-ghost" style="padding:4px 9px;font-size:11px" onclick="abrirHistorialTrabajador('${t.id}')">Historial</button>
           <button class="btn-ghost" style="padding:4px 9px;font-size:11px" onclick="abrirModalTrabajador('${t.id}')">✏</button>
           ${configVac && !agotado ? `<button class="btn-primary" style="padding:4px 10px;font-size:11px" onclick="abrirAdjudicarVac('${t.id}')">+ Adjudicar</button>` : ''}
           <button class="btn-ghost" style="padding:4px 8px;font-size:11px;color:var(--red);border-color:var(--red)" onclick="eliminarTrabajador('${t.id}')">×</button>
@@ -2371,47 +2373,119 @@ function renderWorkersVac() {
   el.innerHTML = html;
 }
 
-// ── Lista cronológica de vacaciones ─────────────────────────────────────────
+// ── Tarjeta de vacación reutilizable ────────────────────────────────────────
+function _cardVac(v, opts = {}) {
+  const { editable = true } = opts;
+  const t      = trabajadoresData.find(x => x.id === v.trabajador_id);
+  const color  = t?.color || '#4caf82';
+  const dias   = contarDiasVac(v.fecha_inicio, v.fecha_fin);
+  const tLbl   = configVac ? (configVac.tipo_dias === 'laborales' ? 'lab.' : 'nat.') : '';
+  const hoy    = new Date().toISOString().slice(0, 10);
+  const activa = v.fecha_inicio <= hoy && v.fecha_fin >= hoy;
+  const futura = v.fecha_inicio > hoy;
+  const dInicio = futura ? Math.ceil((new Date(v.fecha_inicio) - new Date()) / 86400000) : 0;
+  const dFin    = activa ? Math.ceil((new Date(v.fecha_fin)   - new Date()) / 86400000) : 0;
+  return `
+  <div style="background:var(--surface);border:1px solid ${activa ? color : 'var(--border)'};border-radius:8px;padding:10px 12px;margin-bottom:8px${activa ? ';box-shadow:0 0 0 1px '+color+'22' : ''}">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
+      <span style="font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t?.nombre || 'Desconocido'}</span>
+      ${activa ? `<span style="font-size:10px;background:${color};color:#fff;padding:1px 7px;border-radius:6px;font-weight:600;white-space:nowrap">EN CURSO</span>` : ''}
+      ${futura ? `<span style="font-size:11px;color:${color};font-weight:600;white-space:nowrap">en ${dInicio}d</span>` : ''}
+      ${editable ? `
+        <button class="btn-ghost" style="padding:2px 7px;font-size:11px;flex-shrink:0" onclick="abrirAdjudicarVac('${v.trabajador_id}','${v.id}')">✏</button>
+        <button class="btn-ghost" style="padding:2px 7px;font-size:11px;color:var(--red);flex-shrink:0" onclick="eliminarVacacion('${v.id}')">×</button>
+      ` : ''}
+    </div>
+    <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;padding-left:18px">${v.fecha_inicio} → ${v.fecha_fin}${dias ? ` · ${dias} ${tLbl}` : ''}${activa ? ` · ${dFin}d restantes` : ''}</div>
+    ${v.notas ? `<div style="font-size:11px;color:var(--muted);font-style:italic;padding-left:18px;margin-top:2px">${v.notas}</div>` : ''}
+  </div>`;
+}
+
+// ── Vacaciones asignadas (futuras + en curso) ───────────────────────────────
 function renderVacCronologicas() {
   const el = document.getElementById('vacacionesAsignadasList');
   if (!el) return;
   const hoy = new Date().toISOString().slice(0, 10);
   const vacs = vacacionesData
-    .filter(v => {
-      const yi = parseInt(v.fecha_inicio.slice(0, 4));
-      const yf = parseInt(v.fecha_fin.slice(0, 4));
-      return yi === anioVacActivo || yf === anioVacActivo;
-    })
+    .filter(v => v.fecha_fin >= hoy && (
+      parseInt(v.fecha_inicio.slice(0, 4)) === anioVacActivo ||
+      parseInt(v.fecha_fin.slice(0, 4))   === anioVacActivo
+    ))
     .sort((a, b) => a.fecha_inicio.localeCompare(b.fecha_inicio));
   if (!vacs.length) {
-    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Sin vacaciones asignadas en ${anioVacActivo}</div>`;
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Sin vacaciones pendientes en ${anioVacActivo}</div>`;
     return;
   }
-  el.innerHTML = vacs.map(v => {
-    const t      = trabajadoresData.find(x => x.id === v.trabajador_id);
-    const color  = t?.color || '#4caf82';
-    const dias   = contarDiasVac(v.fecha_inicio, v.fecha_fin);
-    const tLbl   = configVac ? (configVac.tipo_dias === 'laborales' ? 'lab.' : 'nat.') : '';
-    const activa = v.fecha_inicio <= hoy && v.fecha_fin >= hoy;
-    const futura = v.fecha_inicio > hoy;
-    const pasada = v.fecha_fin < hoy;
-    const dInicio = futura ? Math.ceil((new Date(v.fecha_inicio) - new Date()) / 86400000) : 0;
-    const dFin    = activa ? Math.ceil((new Date(v.fecha_fin)   - new Date()) / 86400000) : 0;
-    return `
-    <div style="background:var(--surface);border:1px solid ${activa ? color : 'var(--border)'};border-radius:8px;padding:10px 12px;margin-bottom:8px${activa ? ';box-shadow:0 0 0 1px '+color+'22' : ''}">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
-        <span style="font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t?.nombre || 'Desconocido'}</span>
-        ${activa  ? `<span style="font-size:10px;background:${color};color:#fff;padding:1px 7px;border-radius:6px;font-weight:600;white-space:nowrap">EN CURSO</span>` : ''}
-        ${futura  ? `<span style="font-size:11px;color:${color};font-weight:600;white-space:nowrap">en ${dInicio}d</span>` : ''}
-        ${pasada  ? `<span style="font-size:11px;color:var(--muted);white-space:nowrap">Finalizada</span>` : ''}
-        <button class="btn-ghost" style="padding:2px 7px;font-size:11px;flex-shrink:0" onclick="abrirAdjudicarVac('${v.trabajador_id}','${v.id}')">✏</button>
-        <button class="btn-ghost" style="padding:2px 7px;font-size:11px;color:var(--red);flex-shrink:0" onclick="eliminarVacacion('${v.id}')">×</button>
-      </div>
-      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;padding-left:18px">${v.fecha_inicio} → ${v.fecha_fin}${dias ? ` · ${dias} ${tLbl}` : ''}${activa ? ` · ${dFin}d restantes` : ''}</div>
-      ${v.notas ? `<div style="font-size:11px;color:var(--muted);font-style:italic;padding-left:18px;margin-top:2px">${v.notas}</div>` : ''}
-    </div>`;
-  }).join('');
+  el.innerHTML = vacs.map(v => _cardVac(v)).join('');
+}
+
+// ── Vacaciones disfrutadas (ya terminadas, año activo) ──────────────────────
+function renderVacDisfrutadas() {
+  const el = document.getElementById('vacacionesDisfrutadasList');
+  if (!el) return;
+  const hoy = new Date().toISOString().slice(0, 10);
+  const vacs = vacacionesData
+    .filter(v => v.fecha_fin < hoy && (
+      parseInt(v.fecha_inicio.slice(0, 4)) === anioVacActivo ||
+      parseInt(v.fecha_fin.slice(0, 4))   === anioVacActivo
+    ))
+    .sort((a, b) => b.fecha_fin.localeCompare(a.fecha_fin)); // más recientes primero
+  if (!vacs.length) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Sin vacaciones disfrutadas en ${anioVacActivo}</div>`;
+    return;
+  }
+  el.innerHTML = vacs.map(v => _cardVac(v, { editable: false })).join('');
+}
+
+// ── Historial completo de un trabajador ────────────────────────────────────
+function abrirHistorialTrabajador(trabId) {
+  const t = trabajadoresData.find(x => x.id === trabId);
+  if (!t) return;
+  const hoy  = new Date().toISOString().slice(0, 10);
+  const tLbl = configVac ? (configVac.tipo_dias === 'laborales' ? 'días lab.' : 'días nat.') : 'días';
+  const vacs = vacacionesData
+    .filter(v => v.trabajador_id === trabId)
+    .sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio));
+  // Agrupar por año
+  const byYear = {};
+  vacs.forEach(v => {
+    const y = v.fecha_inicio.slice(0, 4);
+    if (!byYear[y]) byYear[y] = [];
+    byYear[y].push(v);
+  });
+  let html = '';
+  if (!vacs.length) {
+    html = `<p style="color:var(--muted);text-align:center;padding:20px 0">Sin vacaciones registradas</p>`;
+  } else {
+    html = Object.keys(byYear).sort((a, b) => b - a).map(year => {
+      const items = byYear[year];
+      const total = items.reduce((s, v) => s + contarDiasVac(v.fecha_inicio, v.fecha_fin), 0);
+      const rows = items.map(v => {
+        const dias   = contarDiasVac(v.fecha_inicio, v.fecha_fin);
+        const activa = v.fecha_inicio <= hoy && v.fecha_fin >= hoy;
+        const futura = v.fecha_inicio > hoy;
+        return `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)">
+          <span style="font-family:'DM Mono',monospace;font-size:12px;flex:1">${v.fecha_inicio} → ${v.fecha_fin}</span>
+          <span style="font-size:12px;color:var(--muted);white-space:nowrap">${dias} ${tLbl}</span>
+          ${activa ? `<span style="font-size:10px;background:var(--accent);color:#0f0f0f;padding:1px 7px;border-radius:4px;font-weight:700">EN CURSO</span>` : ''}
+          ${futura ? `<span style="font-size:10px;color:var(--accent);font-weight:600">Pendiente</span>` : ''}
+        </div>`;
+      }).join('');
+      return `
+      <div style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--border)">
+          <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">${year}</span>
+          <span style="font-size:12px;color:var(--muted)">${total} ${tLbl}</span>
+        </div>
+        ${rows}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('modalHistorialTitle').textContent = `Historial — ${t.nombre}`;
+  document.getElementById('modalHistorialContent').innerHTML = html;
+  document.getElementById('modalHistorial').classList.add('active');
 }
 
 function cambiarAnioVac(delta) {

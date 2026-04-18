@@ -304,8 +304,9 @@
   @media (max-width: 600px)  { .dash-grid { grid-template-columns: 1fr; } }
 
   /* ===== VACACIONES ===== */
-  .vac-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
-  @media (max-width: 900px) { .vac-grid { grid-template-columns: 1fr; } }
+  .vac-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 1200px) { .vac-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 900px)  { .vac-grid { grid-template-columns: 1fr; } }
   .dash-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   .dash-panel-title { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .dash-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
