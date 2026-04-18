@@ -1,0 +1,17 @@
+# IDE / editor
+.claude/
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Variables de entorno (por si se añaden en el futuro)
+.env
+.env.local
+.env*.local
+
+# Dependencias (por si se añade npm en el futuro)
+node_modules/

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/gestockpro-favicon.png">
+<title>Taller — Seguimiento de Pedidos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=3">
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen">
+
+  <!-- Login principal -->
+  <div class="login-box" id="boxLogin">
+    <img src="/gestockpro-fondo-oscuro.png" alt="GestockPro" style="height:44px;width:auto;object-fit:contain;margin-bottom:8px" id="loginLogo">
+    <div class="login-subtitle">Accede con tu usuario del taller</div>
+    <div class="login-error" id="loginError">Email o contraseña incorrectos</div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="tu@email.com" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btnLogin" onclick="iniciarSesion()">Entrar</button>
+    <div class="login-footer">
+      <a href="#" onclick="mostrarRecuperar();return false;" style="color:var(--muted);text-decoration:none;">¿Olvidaste tu contraseña?</a>
+    </div>
+  </div>
+
+  <!-- Recuperar contraseña -->
+  <div class="login-box" id="boxRecuperar" style="display:none">
+    <img src="/gestockpro-fondo-oscuro.png" alt="GestockPro" style="height:44px;width:auto;object-fit:contain;margin-bottom:8px" id="loginLogo">
+    <div class="login-subtitle">Te enviaremos un enlace a tu email para restablecer la contraseña</div>
+    <div class="login-error" id="recuperarError"></div>
+    <div id="recuperarOk" style="display:none;background:var(--green-bg);border:1px solid var(--green);color:var(--green);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;">
+      ✓ Email enviado. Revisa tu bandeja de entrada.
+    </div>
+    <div class="login-field">
+      <label>Tu email</label>
+      <input type="email" id="recuperarEmail" placeholder="tu@email.com">
+    </div>
+    <button class="btn-login" id="btnRecuperar" onclick="enviarRecuperacion()">Enviar enlace</button>
+    <div class="login-footer">
+      <a href="#" onclick="mostrarLogin();return false;" style="color:var(--muted);text-decoration:none;">← Volver al inicio de sesión</a>
+    </div>
+  </div>
+
+  <!-- Nueva contraseña (cuando llega desde el enlace del email) -->
+  <div class="login-box" id="boxNuevaPass" style="display:none">
+    <img src="/gestockpro-fondo-oscuro.png" alt="GestockPro" style="height:44px;width:auto;object-fit:contain;margin-bottom:8px" id="loginLogo">
+    <div class="login-subtitle">Introduce tu nueva contraseña</div>
+    <div class="login-error" id="nuevaPassError"></div>
+    <div class="login-field">
+      <label>Nueva contraseña</label>
+      <input type="password" id="nuevaPass" placeholder="Mínimo 6 caracteres">
+    </div>
+    <div class="login-field">
+      <label>Repetir contraseña</label>
+      <input type="password" id="nuevaPass2" placeholder="Repite la contraseña">
+    </div>
+    <button class="btn-login" id="btnNuevaPass" onclick="guardarNuevaPass()">Guardar nueva contraseña</button>
+  </div>
+
+</div>
+
+<!-- ===== APP ===== -->
+<div id="appScreen">
+  <header>
+    <div class="logo">
+      <img id="logoImg" src="/gestockpro-fondo-oscuro.png" alt="GestockPro" style="height:36px;width:auto;object-fit:contain;">
+    </div>
+    <div class="search-wrap">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--accent);pointer-events:none">🔍</span>
+      <input type="text" class="search-input" id="searchInput" placeholder="Buscar cliente, matrícula, pieza..." oninput="toggleClearBtn(this)" style="padding-left:32px">
+      <button id="clearSearch" onclick="clearSearchInput()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text);line-height:1;padding:2px 4px;opacity:0.8" title="Limpiar búsqueda">×</button>
+    </div>
+    <div class="header-right">
+      <div class="sync-indicator">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncLabel">Conectando...</span>
+      </div>
+      <div class="user-chip"><strong id="userEmail">—</strong></div>
+      <button class="btn-theme" id="btnTema" onclick="toggleTema()" title="Cambiar tema">🌙</button>
+      <button class="btn-primary" onclick="abrirModalNuevo()">+ Nuevo pedido</button>
+      <button class="btn-logout" onclick="cerrarSesion()">Salir</button>
+    </div>
+  </header>
+
+  <div class="top-bar">
+    <div id="tabsContainer" style="display:contents">
+      <button class="tab-btn active" id="tabClientes" onclick="setTab('clientes')">👤 Por clientes</button>
+      <button class="tab-btn" id="tabCrono" onclick="setTab('crono')">📋 Listado de piezas</button>
+      <button class="tab-btn" id="tabItv" onclick="setTab('itv')">🏭 ITV</button>
+      <button class="tab-btn" id="tabAgenda" onclick="setTab('agenda')">📅 Agenda</button>
+      <button class="tab-btn" id="tabVacaciones" onclick="setTab('vacaciones')">🏖️ Vacaciones</button>
+    </div>
+    <div class="tab-separator"></div>
+    <div class="filters-wrap" id="filtersWrap">
+      <span class="filter-label">Año:</span>
+      <div id="yearFilters" style="display:flex;gap:6px;flex-wrap:nowrap"></div>
+    </div>
+  </div>
+
+  <main>
+    <div id="viewDashboard" style="display:none">
+      <div class="loading-state"><div class="spinner"></div><p>Cargando...</p></div>
+    </div>
+
+    <div id="viewClientes">
+      <div class="stats-row">
+        <div class="stat-card s-total" id="filterCardTodos" onclick="setFilterCard('todos')" style="cursor:pointer"><div class="stat-number" id="statTotal">—</div><div class="stat-label">Pedidos totales</div></div>
+        <div class="stat-card s-ok" id="filterCardListos" onclick="setFilterCard('listo')" style="cursor:pointer"><div class="stat-number" id="statListos">—</div><div class="stat-label">Pedidos completados</div></div>
+        <div class="stat-card s-pending" id="filterCardPendientes" onclick="setFilterCard('pendiente')" style="cursor:pointer"><div class="stat-number" id="statPendientes">—</div><div class="stat-label">Pedidos pendientes</div></div>
+        <div class="stat-card s-waiting" id="filterCardPiezas" style="cursor:default"><div class="stat-number" id="statPiezas">—</div><div class="stat-label">Piezas pendientes</div></div>
+      </div>
+      <div class="clients-grid" id="clientsGrid">
+        <div class="loading-state"><div class="spinner"></div><p>Cargando pedidos...</p></div>
+      </div>
+    </div>
+    <div id="viewCrono"></div>
+
+    <!-- CAJA -->
+    <div id="viewCaja" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="cambiarFechaCaja(-1)" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px">‹</button>
+          <span id="cajaFechaLabel" style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;min-width:160px;text-align:center"></span>
+          <button onclick="cambiarFechaCaja(1)" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px">›</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-primary" onclick="abrirModalCaja('cobro')">+ Cobro</button>
+          <button class="btn-primary" style="background:var(--red);color:#fff" onclick="abrirModalCaja('pago')">+ Pago</button>
+          <button class="btn-ghost" onclick="exportarCaja()">↓ Excel</button>
+        </div>
+      </div>
+      <!-- Resumen -->
+      <div class="stats-row" style="margin-bottom:16px" id="cajaResumen"></div>
+      <!-- Movimientos -->
+      <div id="cajaList"></div>
+    </div>
+
+    <!-- MANUAL ITV -->
+    <div id="viewManual" style="display:none;position:fixed;top:110px;left:0;right:0;bottom:0;z-index:50">
+      <iframe id="manualFrame" src="manualitv.html" style="width:100%;height:100%;border:none"></iframe>
+    </div>
+
+    <!-- ITV -->
+    <div id="viewItv" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="stats-row" style="margin:0;flex:1">
+          <div class="stat-card" style="flex:none;padding:10px 16px"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Total</div><div class="stat-number" id="itvTotal" style="font-size:22px">—</div></div>
+          <div class="stat-card" style="flex:none;padding:10px 16px"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:0.06em">Aprobadas</div><div class="stat-number" id="itvAprobadas" style="font-size:22px;color:var(--green)">—</div></div>
+          <div class="stat-card" style="flex:none;padding:10px 16px"><div style="font-size:11px;color:var(--red);text-transform:uppercase;letter-spacing:0.06em">Rechazadas</div><div class="stat-number" id="itvRechazadas" style="font-size:22px;color:var(--red)">—</div></div>
+          <div class="stat-card" style="flex:none;padding:10px 16px"><div style="font-size:11px;color:var(--yellow);text-transform:uppercase;letter-spacing:0.06em">Pendientes</div><div class="stat-number" id="itvPendientes" style="font-size:22px;color:var(--yellow)">—</div></div>
+        </div>
+        <button class="btn-primary" onclick="abrirModalItv()" style="margin-left:16px;white-space:nowrap">+ Nueva ITV</button>
+      </div>
+      <!-- Tabs ITV -->
+      <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border)">
+        <button id="itvTabPendientes" onclick="setItvTab('pendientes')" style="background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">Pendientes y rechazadas</button>
+        <button id="itvTabHistorial" onclick="setItvTab('historial')" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">📋 Historial</button>
+      </div>
+      <div id="itvList"></div>
+
+
+    </div>
+
+    <!-- GARANTÍAS -->
+    <div id="viewGarantias" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+        <div class="stats-row" style="margin:0;flex:1">
+          <div class="stat-card" style="flex:none;padding:10px 16px"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Total</div><div class="stat-number" id="garTotal" style="font-size:22px">—</div></div>
+          <div class="stat-card" style="flex:none;padding:10px 16px"><div style="font-size:11px;color:var(--yellow);text-transform:uppercase;letter-spacing:0.06em">Pendientes</div><div class="stat-number" id="garPendientes" style="font-size:22px;color:var(--yellow)">—</div></div>
+          <div class="stat-card" style="flex:none;padding:10px 16px"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:0.06em">Aceptadas</div><div class="stat-number" id="garAceptadas" style="font-size:22px;color:var(--green)">—</div></div>
+          <div class="stat-card" style="flex:none;padding:10px 16px"><div style="font-size:11px;color:var(--red);text-transform:uppercase;letter-spacing:0.06em">Denegadas</div><div class="stat-number" id="garDenegadas" style="font-size:22px;color:var(--red)">—</div></div>
+        </div>
+        <button class="btn-primary" onclick="abrirModalGarantia()" style="margin-left:16px;white-space:nowrap">+ Nueva garantía</button>
+      </div>
+      <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border)">
+        <button id="garTabPendientes" onclick="setGarantiasTab('pendientes')" style="background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">⏳ Pendientes</button>
+        <button id="garTabHistorial" onclick="setGarantiasTab('historial')" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">📋 Historial</button>
+      </div>
+      <div id="garList"></div>
+    </div>
+
+    <!-- AGENDA -->
+    <div id="viewAgenda" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="cambiarMes(-1)" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px">‹</button>
+          <span id="agendaMesLabel" style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;min-width:160px;text-align:center"></span>
+          <button onclick="cambiarMes(1)" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px">›</button>
+        </div>
+        <button class="btn-primary" onclick="abrirModalAgenda()" style="white-space:nowrap">+ Nueva cita</button>
+      </div>
+      <div id="agendaCalendario"></div>
+    </div>
+    <!-- VACACIONES -->
+    <div id="viewVacaciones" style="display:none">
+      <!-- Cabecera -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700">Vacaciones del personal</h2>
+          <div style="display:flex;align-items:center;gap:2px">
+            <button class="btn-ghost" style="padding:3px 9px;font-size:17px;line-height:1" onclick="cambiarAnioVac(-1)">‹</button>
+            <span id="anioVacLabel" style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600;min-width:44px;text-align:center">2026</span>
+            <button class="btn-ghost" style="padding:3px 9px;font-size:17px;line-height:1" onclick="cambiarAnioVac(1)">›</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" onclick="abrirConfigVac()">⚙ Política vacacional</button>
+          <button class="btn-primary" id="btnAddTrabajador" onclick="abrirModalTrabajador()">+ Trabajador</button>
+        </div>
+      </div>
+      <!-- Aviso configuración pendiente -->
+      <div id="vacConfigWarning" style="display:none;align-items:center;gap:12px;background:var(--yellow-bg);border:1px solid var(--yellow);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px">
+        <span style="font-size:18px;flex-shrink:0;color:var(--yellow)">⚠</span>
+        <span><strong>Configura primero la política vacacional de tu empresa</strong> — días al año, tipo y días laborales de la semana.</span>
+        <button class="btn-ghost" style="margin-left:auto;white-space:nowrap;flex-shrink:0;border-color:var(--yellow);color:var(--yellow)" onclick="abrirConfigVac()">Configurar →</button>
+      </div>
+      <!-- Dos columnas: trabajadores | vacaciones asignadas -->
+      <div class="vac-grid">
+        <!-- Columna izquierda: trabajadores -->
+        <div>
+          <h3 style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Trabajadores</h3>
+          <div id="vacacionesList"></div>
+        </div>
+        <!-- Columna derecha: vacaciones cronológicas -->
+        <div>
+          <h3 style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Vacaciones asignadas</h3>
+          <div id="vacacionesAsignadasList"></div>
+        </div>
+      </div>
+    </div>
+    <!-- DEVOLUCIONES -->
+    <div id="viewDevoluciones" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700">Devoluciones pendientes</h2>
+      </div>
+      <div id="devolucionesList"></div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL PEDIDO -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Nuevo pedido</span>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" id="matriculaGroup">
+          <label>Matrícula</label>
+          <input type="text" id="fMatricula" placeholder="0000XXX" style="text-transform:uppercase" oninput="buscarMatricula(this.value)" autocomplete="off">
+          <div class="autocomplete-list" id="autocompleteList" style="display:none"></div>
+        </div>
+        <div class="form-group"><label>Cliente</label><input type="text" id="fCliente" placeholder="Nombre del cliente"></div>
+        <div class="form-group full"><label>Vehículo</label><input type="text" id="fVehiculo" placeholder="Modelo del vehículo"></div>
+
+      </div>
+      <div class="piezas-section">
+        <div class="piezas-section-title">
+          <span>Piezas del pedido</span>
+        </div>
+        <div id="piezasInputs"></div>
+        <button class="btn-add-pieza-main" onclick="addPiezaRow()">+ Añadir pieza</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" id="btnGuardar" onclick="guardarPedido()">Guardar pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ITV -->
+<div class="modal-overlay" id="modalItv">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalItvTitle">Nueva ITV</span>
+      <button class="modal-close" onclick="cerrarModalId('modalItv')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Fecha ITV (dd/mm/aaaa)</label><input type="text" id="itvFecha" placeholder="15/04/2026" maxlength="10" oninput="formatFechaInput(this)"></div>
+        <div class="form-group"><label>Horario</label><input type="text" id="itvHorario" placeholder="ej: 09:30"></div>
+        <div class="form-group full"><label>Lugar</label><input type="text" id="itvLugar" placeholder="Estación ITV..."></div>
+        <div class="form-group" id="itvMatriculaGroup" style="position:relative">
+          <label>Matrícula</label>
+          <input type="text" id="itvMatricula" placeholder="0000XXX" style="text-transform:uppercase" oninput="buscarMatriculaGeneric(this.value,'itvAutoList','itvMatricula','itvCliente','itvVehiculo')" autocomplete="off">
+          <div class="autocomplete-list" id="itvAutoList" style="display:none"></div>
+        </div>
+        <div class="form-group"><label>Vehículo</label><input type="text" id="itvVehiculo" placeholder="Marca/Modelo"></div>
+        <div class="form-group full"><label>Cliente</label><input type="text" id="itvCliente" placeholder="Nombre del cliente"></div>
+        <div class="form-group full"><label>Observaciones</label><textarea id="itvObs" placeholder="Indicaciones adicionales..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="cerrarModalId('modalItv')">Cancelar</button>
+      <button class="btn-primary" id="btnGuardarItv" onclick="guardarItv()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGENDA -->
+<div class="modal-overlay" id="modalAgenda">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalAgendaTitle">Nueva cita</span>
+      <button class="modal-close" onclick="cerrarModalId('modalAgenda')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" id="agendaMatriculaGroup" style="position:relative">
+          <label>Matrícula</label>
+          <input type="text" id="agendaMatricula" placeholder="0000XXX" style="text-transform:uppercase" oninput="buscarMatriculaGeneric(this.value,'agendaAutoList','agendaMatricula','agendaCliente','agendaVehiculo')" autocomplete="off">
+          <div class="autocomplete-list" id="agendaAutoList" style="display:none"></div>
+        </div>
+        <div class="form-group"><label>Cliente</label><input type="text" id="agendaCliente" placeholder="Nombre del cliente"></div>
+        <div class="form-group"><label>Vehículo</label><input type="text" id="agendaVehiculo" placeholder="Marca/Modelo"></div>
+        <div class="form-group"><label>Teléfono</label><input type="text" id="agendaTelefono" placeholder="600 000 000"></div>
+        <div class="form-group full"><label>Trabajos a realizar</label><textarea id="agendaTrabajos" placeholder="Descripción de los trabajos..." style="min-height:120px"></textarea></div>
+      </div>
+      <input type="hidden" id="agendaFecha">
+      <input type="hidden" id="agendaHora">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="cerrarModalId('modalAgenda')">Cancelar</button>
+      <button id="btnEliminarCita" class="btn-ghost" style="color:var(--red);border-color:var(--red);display:none" onclick="eliminarCita()">Eliminar cita</button>
+      <button class="btn-primary" id="btnGuardarAgenda" onclick="guardarAgenda()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CAJA -->
+<div class="modal-overlay" id="modalCaja">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title" id="modalCajaTitle">+ Nuevo cobro</span>
+      <button class="modal-close" onclick="cerrarModalId('modalCaja')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cajaTipo" value="cobro">
+      <div class="form-grid">
+        <div class="form-group full"><label>Concepto</label><input type="text" id="cajaConcepto" placeholder="Ej: Cambio de aceite, Factura proveedor..."></div>
+        <div class="form-group full"><label>Cliente / Proveedor</label><input type="text" id="cajaCliente" placeholder="Nombre"></div>
+        <div class="form-group"><label>Importe (€)</label><input type="number" id="cajaImporte" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="form-group"><label>Forma de pago</label>
+          <select id="cajaFormaPago" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:6px;font-size:13px;width:100%;outline:none">
+            <option value="efectivo">💵 Efectivo</option>
+            <option value="tarjeta">💳 Tarjeta</option>
+            <option value="transferencia">🏦 Transferencia</option>
+            <option value="cartera">👛 Cartera</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="cerrarModalId('modalCaja')">Cancelar</button>
+      <button class="btn-primary" id="btnGuardarCaja" onclick="guardarMovimiento()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="confirm-modal">
+    <div class="confirm-icon">🗑</div>
+    <div class="confirm-title">Eliminar pedido</div>
+    <div class="confirm-text">¿Seguro que quieres eliminar este cliente y todas sus piezas? Esta acción no se puede deshacer.</div>
+    <div class="confirm-btns">
+      <button class="btn-ghost" onclick="cerrarConfirm()">Cancelar</button>
+      <button class="btn-primary" style="background:var(--red);color:#fff" onclick="confirmarEliminar()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TRABAJADOR -->
+<div class="modal-overlay" id="modalTrabajador" onclick="if(event.target===this)cerrarModalId('modalTrabajador')">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTrabajadorTitle">Nuevo trabajador</span>
+      <button class="modal-close" onclick="cerrarModalId('modalTrabajador')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Nombre *</label><input type="text" id="trabNombre" placeholder="Nombre completo"></div>
+        <div class="form-group full"><label>Puesto</label><input type="text" id="trabPuesto" placeholder="Ej: Mecánico, Recepción..."></div>
+        <div class="form-group full" style="display:flex;align-items:center;gap:12px">
+          <label style="margin-bottom:0;white-space:nowrap">Color en calendario</label>
+          <input type="color" id="trabColor" value="#4caf82" style="width:44px;height:36px;border:1px solid var(--border2);border-radius:6px;background:var(--surface2);cursor:pointer;padding:2px 4px">
+          <span id="trabColorLabel" style="font-size:12px;color:var(--muted)">Elige un color</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="cerrarModalId('modalTrabajador')">Cancelar</button>
+      <button class="btn-primary" id="btnGuardarTrabajador" onclick="guardarTrabajador()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIGURACIÓN VACACIONAL -->
+<div class="modal-overlay" id="modalConfigVac" onclick="if(event.target===this)cerrarModalId('modalConfigVac')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">⚙ Política vacacional</span>
+      <button class="modal-close" onclick="cerrarModalId('modalConfigVac')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Días de vacaciones al año *</label>
+          <input type="number" id="cfgDiasAnuales" min="1" max="365" placeholder="Ej: 22" style="max-width:130px">
+        </div>
+        <div class="form-group full">
+          <label>Tipo de días</label>
+          <div style="display:flex;gap:24px;margin-top:8px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:400;margin:0;font-size:13px">
+              <input type="radio" name="cfgTipo" value="laborales" onchange="toggleCfgDiasLab()" style="accent-color:var(--accent);width:15px;height:15px"> Laborales
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:400;margin:0;font-size:13px">
+              <input type="radio" name="cfgTipo" value="naturales" onchange="toggleCfgDiasLab()" style="accent-color:var(--accent);width:15px;height:15px"> Naturales (calendario)
+            </label>
+          </div>
+        </div>
+        <div class="form-group full" id="cfgDiasLabRow">
+          <label>Días laborales de la semana</label>
+          <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <label style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-weight:400;font-size:12px;margin:0">
+              <input type="checkbox" id="cfgDia1" style="accent-color:var(--accent);width:16px;height:16px"> Lun
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-weight:400;font-size:12px;margin:0">
+              <input type="checkbox" id="cfgDia2" style="accent-color:var(--accent);width:16px;height:16px"> Mar
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-weight:400;font-size:12px;margin:0">
+              <input type="checkbox" id="cfgDia3" style="accent-color:var(--accent);width:16px;height:16px"> Mié
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-weight:400;font-size:12px;margin:0">
+              <input type="checkbox" id="cfgDia4" style="accent-color:var(--accent);width:16px;height:16px"> Jue
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-weight:400;font-size:12px;margin:0">
+              <input type="checkbox" id="cfgDia5" style="accent-color:var(--accent);width:16px;height:16px"> Vie
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-weight:400;font-size:12px;margin:0">
+              <input type="checkbox" id="cfgDia6" style="accent-color:var(--accent);width:16px;height:16px"> Sáb
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-weight:400;font-size:12px;margin:0">
+              <input type="checkbox" id="cfgDia7" style="accent-color:var(--accent);width:16px;height:16px"> Dom
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="cerrarModalId('modalConfigVac')">Cancelar</button>
+      <button class="btn-primary" id="btnGuardarConfigVac" onclick="guardarConfigVac()">Guardar configuración</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADJUDICAR VACACIONES -->
+<div class="modal-overlay" id="modalAdjudicar" onclick="if(event.target===this)cerrarModalId('modalAdjudicar')">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <span class="modal-title" id="adjudicarTitle">Adjudicar vacaciones</span>
+      <button class="modal-close" onclick="cerrarModalId('modalAdjudicar')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Fecha inicio *</label>
+          <input type="date" id="adjInicio" oninput="actualizarResumenAdj()">
+        </div>
+        <div class="form-group">
+          <label>Fecha fin *</label>
+          <input type="date" id="adjFin" oninput="actualizarResumenAdj()">
+        </div>
+        <div class="form-group full">
+          <div id="adjResumen" style="display:none"></div>
+        </div>
+        <div class="form-group full">
+          <label>Notas <span style="color:var(--muted);font-weight:400">(opcional)</span></label>
+          <textarea id="adjNotas" placeholder="Observaciones..." rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="btnEliminarAdj" style="color:var(--red);border-color:var(--red);display:none" onclick="eliminarVacacion(editandoVacId)">Eliminar</button>
+      <button class="btn-ghost" onclick="cerrarModalId('modalAdjudicar')">Cancelar</button>
+      <button class="btn-primary" id="btnGuardarAdj" onclick="guardarAdjudicacion()">✓ Confirmar vacaciones</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== CONFIRM DEVOLUCIÓN (DESHACER / ELIMINAR) ===== -->
+<div class="modal-overlay" id="confirmDevolucionOverlay" onclick="if(event.target===this)cerrarConfirmDevolucion()">
+  <div class="confirm-modal">
+    <div class="confirm-icon" id="confirmDevolucionIcon">❓</div>
+    <div class="confirm-title" id="confirmDevolucionTitle">Confirmar</div>
+    <div class="confirm-text" id="confirmDevolucionText"></div>
+    <div class="confirm-btns">
+      <button class="btn-ghost" onclick="cerrarConfirmDevolucion()">Cancelar</button>
+      <button class="btn-primary" id="confirmDevolucionBtn" onclick="ejecutarConfirmDevolucion()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCROLL TO TOP -->
+<button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Volver arriba" style="position:fixed;bottom:28px;right:28px;z-index:999;background:var(--accent);color:#0f0f0f;border:none;border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 16px rgba(0,0,0,0.35);line-height:1">↑</button>
+<script src="app.js?v=5"></script>
+<!-- ===== MODAL GARANTÍAS ===== -->
+<div class="modal-overlay" id="garModalOverlay" onclick="if(event.target===this)cerrarModalGarantia()">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="garModalTitle">Nueva garantía</div>
+      <button class="modal-close" onclick="cerrarModalGarantia()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" id="garMatriculaGroup" style="position:relative">
+          <label>Matrícula</label>
+          <input type="text" id="garMatricula" placeholder="Buscar matrícula..." autocomplete="off" style="text-transform:uppercase"
+            oninput="buscarMatriculaGeneric(this.value,'garMatList','garMatricula','garCliente','garVehiculo')">
+          <div id="garMatList" class="autocomplete-list" style="display:none"></div>
+        </div>
+        <div class="form-group">
+          <label>Cliente</label>
+          <input type="text" id="garCliente" placeholder="Nombre del cliente">
+        </div>
+        <div class="form-group">
+          <label>Vehículo</label>
+          <input type="text" id="garVehiculo" placeholder="Marca y modelo">
+        </div>
+        <div class="form-group">
+          <label>Fecha devolución</label>
+          <input type="date" id="garFecha">
+        </div>
+        <div class="form-group">
+          <label>Fecha de compra</label>
+          <input type="date" id="garFechaCompra">
+        </div>
+        <div class="form-group">
+          <label>Referencia</label>
+          <input type="text" id="garPiezaRef" placeholder="Opcional">
+        </div>
+        <div class="form-group full">
+          <label>Descripción de la pieza *</label>
+          <input type="text" id="garPiezaDesc" placeholder="Ej: Amortiguador delantero">
+        </div>
+        <div class="form-group full">
+          <label>Proveedor</label>
+          <input type="text" id="garProveedor" placeholder="Nombre del proveedor" list="garProveedorList" autocomplete="off">
+          <datalist id="garProveedorList"></datalist>
+        </div>
+        <div class="form-group full">
+          <label>Motivo</label>
+          <textarea id="garObs" placeholder="Motivo de la garantía..." rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="cerrarModalGarantia()">Cancelar</button>
+      <button class="btn-primary" id="garSaveBtn" onclick="guardarGarantia()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL FICHA CLIENTE ===== -->
+<div class="modal-overlay" id="fichaOverlay" onclick="if(event.target===this)cerrarFicha()">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="fichaTitulo">—</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px" id="fichaVehiculo">—</div>
+      </div>
+      <button class="modal-close" onclick="cerrarFicha()">✕</button>
+    </div>
+    <div class="modal-body" id="fichaBody"></div>
+  </div>
+</div>
+
+</body>
+</html>
