@@ -1009,8 +1009,10 @@ function addPiezaRow(ref = '', desc = '', llegada = false, created_at = null, ob
         <span style="position:absolute;right:8px;font-size:11px;color:var(--muted);pointer-events:none">%</span>
       </div>
     </div>
-    <input type="text" placeholder="Entrega prevista" value="${entrega}" id="entrega_${pid}" style="grid-column:1;font-size:12px">
-    <input type="text" placeholder="Observaciones" value="${obs}" id="obs_${pid}" style="grid-column:2;font-size:12px">`;
+    <div style="grid-column:1/3;display:flex;gap:8px">
+      <input type="text" placeholder="Entrega prevista" value="${entrega}" id="entrega_${pid}" style="flex:35;min-width:0;font-size:12px">
+      <input type="text" placeholder="Observaciones" value="${obs}" id="obs_${pid}" style="flex:65;min-width:0;font-size:12px">
+    </div>`;
   document.getElementById('piezasInputs').appendChild(row);
 }
 
