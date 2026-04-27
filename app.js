@@ -1000,11 +1000,11 @@ function addPiezaRow(ref = '', desc = '', llegada = false, created_at = null, ob
     <div style="grid-column:1/3;display:flex;gap:8px;align-items:center">
       <input type="text" placeholder="Quién atiende (Web, Whatsapp...)" value="${atiende}" id="atiende_${pid}" style="flex:35;min-width:0;font-size:12px">
       <input type="text" placeholder="Proveedor" value="${empresa}" id="empresa_${pid}" style="flex:35;min-width:0;font-size:12px">
-      <div style="flex:15;min-width:0;position:relative;display:flex;align-items:center">
+      <div style="flex:17.5;min-width:0;position:relative;display:flex;align-items:center">
         <input type="number" step="0.01" min="0" placeholder="0.00" value="${precio}" id="precio_${pid}" style="padding-right:20px;width:100%;box-sizing:border-box;font-size:12px">
         <span style="position:absolute;right:8px;font-size:11px;color:var(--muted);pointer-events:none">€</span>
       </div>
-      <div style="flex:15;min-width:0;position:relative;display:flex;align-items:center">
+      <div style="flex:12.5;min-width:0;position:relative;display:flex;align-items:center">
         <input type="number" step="1" min="0" max="100" placeholder="0" value="${dto}" id="dto_${pid}" style="padding-right:20px;width:100%;box-sizing:border-box;font-size:12px">
         <span style="position:absolute;right:8px;font-size:11px;color:var(--muted);pointer-events:none">%</span>
       </div>
