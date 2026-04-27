@@ -997,21 +997,19 @@ function addPiezaRow(ref = '', desc = '', llegada = false, created_at = null, ob
     <input type="text" placeholder="Referencia" value="${ref}" id="ref_${pid}" style="grid-column:1" oninput="autocompletarRef('${pid}',this.value)" autocomplete="off">
     <input type="text" placeholder="Descripción" value="${desc}" id="desc_${pid}" style="grid-column:2">
     <button class="btn-remove-pieza" onclick="removePiezaRow('${pid}')" style="grid-column:3;grid-row:1/5">×</button>
-    <div style="grid-column:1/3;display:flex;gap:8px;align-items:center">
-      <input type="text" placeholder="Quién atiende (Web, Whatsapp...)" value="${atiende}" id="atiende_${pid}" style="flex:35;min-width:0;font-size:12px">
-      <input type="text" placeholder="Proveedor" value="${empresa}" id="empresa_${pid}" style="flex:35;min-width:0;font-size:12px">
-      <div style="flex:17.5;min-width:0;position:relative;display:flex;align-items:center">
+    <div style="grid-column:1/3;display:grid;grid-template-columns:35fr 35fr 17.5fr 12.5fr;gap:8px">
+      <input type="text" placeholder="Quién atiende (Web, Whatsapp...)" value="${atiende}" id="atiende_${pid}" style="font-size:12px">
+      <input type="text" placeholder="Proveedor" value="${empresa}" id="empresa_${pid}" style="font-size:12px">
+      <div style="position:relative;display:flex;align-items:center">
         <input type="number" step="0.01" min="0" placeholder="0.00" value="${precio}" id="precio_${pid}" style="padding-right:20px;width:100%;box-sizing:border-box;font-size:12px">
         <span style="position:absolute;right:8px;font-size:11px;color:var(--muted);pointer-events:none">€</span>
       </div>
-      <div style="flex:12.5;min-width:0;position:relative;display:flex;align-items:center">
+      <div style="position:relative;display:flex;align-items:center">
         <input type="number" step="1" min="0" max="100" placeholder="0" value="${dto}" id="dto_${pid}" style="padding-right:20px;width:100%;box-sizing:border-box;font-size:12px">
         <span style="position:absolute;right:8px;font-size:11px;color:var(--muted);pointer-events:none">%</span>
       </div>
-    </div>
-    <div style="grid-column:1/3;display:flex;gap:8px">
-      <input type="text" placeholder="Entrega prevista" value="${entrega}" id="entrega_${pid}" style="flex:35;min-width:0;font-size:12px">
-      <input type="text" placeholder="Observaciones" value="${obs}" id="obs_${pid}" style="flex:65;min-width:0;font-size:12px">
+      <input type="text" placeholder="Entrega prevista" value="${entrega}" id="entrega_${pid}" style="font-size:12px">
+      <input type="text" placeholder="Observaciones" value="${obs}" id="obs_${pid}" style="grid-column:2/5;font-size:12px">
     </div>`;
   document.getElementById('piezasInputs').appendChild(row);
 }
