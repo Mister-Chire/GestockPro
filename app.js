@@ -466,7 +466,7 @@ function render() {
         <span class="pieza-estado ${p.llegada ? 'llegada' : 'pendiente'}" style="margin-top:3px"></span>
         <div class="pieza-info">
           <div class="pieza-desc-text">${p.desc || ''}</div>
-          <div class="pieza-ref-text">${p.ref || '—'}${p.atiende ? ` · ${p.atiende}` : ''}${p.empresa ? ` · <span style="color:var(--accent)">${p.empresa}</span>` : ''}${p.entrega ? ` · ${p.entrega}` : ''}${p.obs ? ` · <span style="color:var(--muted);font-style:italic">${p.obs}</span>` : ''}</div>
+          <div class="pieza-ref-text">${p.ref || '—'}${p.atiende ? ` · ${p.atiende}` : ''}${p.empresa ? ` · <span style="color:var(--accent)">${p.empresa}</span>` : ''}${p.entrega ? ` · ${p.entrega}` : ''}${p.precio ? ` · <span style="color:var(--text);font-weight:600">${parseFloat(p.precio).toFixed(2)}€${p.dto ? ` <span style="color:var(--muted)">(-${p.dto}%)</span>` : ''}</span>` : ''}${p.obs ? ` · <span style="color:var(--muted);font-style:italic">${p.obs}</span>` : ''}</div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
             <div class="pieza-timestamp">${p.created_at ? formatFechaHora(p.created_at) : '—'}</div>
             ${p.devolucion ? `<span style="font-size:10px;color:var(--red);padding:2px 6px;border:1px solid var(--red);border-radius:4px">Dev.</span>` : `<button class="pieza-toggle" style="background:var(--red-bg);color:var(--red);border-color:var(--red);font-size:10px;padding:3px 8px;font-weight:600;letter-spacing:0.03em" data-dev="${i}">DEVOLVER</button>`}
@@ -980,25 +980,35 @@ function abrirModalEditar(cid) {
   document.getElementById('fVehiculo').value = c.vehiculo || '';
   piezasRows = [];
   document.getElementById('piezasInputs').innerHTML = '';
-  (c.piezas || []).forEach(p => addPiezaRow(p.ref, p.desc, p.llegada, p.created_at, p.obs || '', p.atiende || '', p.empresa || '', p.entrega || ''));
+  (c.piezas || []).forEach(p => addPiezaRow(p.ref, p.desc, p.llegada, p.created_at, p.obs || '', p.atiende || '', p.empresa || '', p.entrega || '', p.precio || '', p.dto || ''));
   document.getElementById('modalOverlay').classList.add('active');
 }
 
 function cerrarModal() { document.getElementById('modalOverlay').classList.remove('active'); editandoId = null; }
 function cerrarModalSiOverlay(e) { if (e.target === document.getElementById('modalOverlay')) cerrarModal(); }
 
-function addPiezaRow(ref = '', desc = '', llegada = false, created_at = null, obs = '', atiende = '', empresa = '', entrega = '') {
+function addPiezaRow(ref = '', desc = '', llegada = false, created_at = null, obs = '', atiende = '', empresa = '', entrega = '', precio = '', dto = '') {
   const pid = 'pr_' + Date.now() + Math.random().toString(36).slice(2);
   const ts = created_at || new Date().toISOString();
-  piezasRows.push({ pid, llegada, created_at: ts, obs, atiende, empresa, entrega });
+  piezasRows.push({ pid, llegada, created_at: ts, obs, atiende, empresa, entrega, precio, dto });
   const row = document.createElement('div');
   row.className = 'pieza-input-row'; row.id = 'row_' + pid;
   row.innerHTML = `
     <input type="text" placeholder="Referencia" value="${ref}" id="ref_${pid}" style="grid-column:1" oninput="autocompletarRef('${pid}',this.value)" autocomplete="off">
     <input type="text" placeholder="Descripción" value="${desc}" id="desc_${pid}" style="grid-column:2">
-    <button class="btn-remove-pieza" onclick="removePiezaRow('${pid}')" style="grid-column:3;grid-row:1/3">×</button>
-    <input type="text" placeholder="Quién atiende (Web, Whatsapp...)" value="${atiende}" id="atiende_${pid}" style="grid-column:1;font-size:12px">
-    <input type="text" placeholder="Proveedor" value="${empresa}" id="empresa_${pid}" style="grid-column:2;font-size:12px">
+    <button class="btn-remove-pieza" onclick="removePiezaRow('${pid}')" style="grid-column:3;grid-row:1/5">×</button>
+    <div style="grid-column:1/3;display:flex;gap:8px;align-items:center">
+      <input type="text" placeholder="Quién atiende (Web, Whatsapp...)" value="${atiende}" id="atiende_${pid}" style="flex:35;min-width:0;font-size:12px">
+      <input type="text" placeholder="Proveedor" value="${empresa}" id="empresa_${pid}" style="flex:35;min-width:0;font-size:12px">
+      <div style="flex:15;min-width:0;position:relative;display:flex;align-items:center">
+        <input type="number" step="0.01" min="0" placeholder="0.00" value="${precio}" id="precio_${pid}" style="padding-right:20px;width:100%;box-sizing:border-box;font-size:12px">
+        <span style="position:absolute;right:8px;font-size:11px;color:var(--muted);pointer-events:none">€</span>
+      </div>
+      <div style="flex:15;min-width:0;position:relative;display:flex;align-items:center">
+        <input type="number" step="1" min="0" max="100" placeholder="0" value="${dto}" id="dto_${pid}" style="padding-right:20px;width:100%;box-sizing:border-box;font-size:12px">
+        <span style="position:absolute;right:8px;font-size:11px;color:var(--muted);pointer-events:none">%</span>
+      </div>
+    </div>
     <input type="text" placeholder="Entrega prevista" value="${entrega}" id="entrega_${pid}" style="grid-column:1;font-size:12px">
     <input type="text" placeholder="Observaciones" value="${obs}" id="obs_${pid}" style="grid-column:2;font-size:12px">`;
   document.getElementById('piezasInputs').appendChild(row);
@@ -1032,6 +1042,8 @@ async function guardarPedido() {
     atiende: document.getElementById('atiende_' + pid)?.value.trim() || '',
     empresa: document.getElementById('empresa_' + pid)?.value.trim() || '',
     entrega: document.getElementById('entrega_' + pid)?.value.trim() || '',
+    precio:  document.getElementById('precio_' + pid)?.value.trim() || '',
+    dto:     document.getElementById('dto_' + pid)?.value.trim() || '',
     llegada, created_at
   })).filter(p => p.desc);
 
