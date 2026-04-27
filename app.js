@@ -998,7 +998,7 @@ function addPiezaRow(ref = '', desc = '', llegada = false, created_at = null, ob
     <input type="text" placeholder="Descripción" value="${desc}" id="desc_${pid}" style="grid-column:2">
     <button class="btn-remove-pieza" onclick="removePiezaRow('${pid}')" style="grid-column:3;grid-row:1/5">×</button>
     <div style="grid-column:1/3;display:grid;grid-template-columns:35fr 35fr 17.5fr 12.5fr;gap:8px">
-      <input type="text" placeholder="Quién atiende (Web, Whatsapp...)" value="${atiende}" id="atiende_${pid}" style="font-size:12px">
+      <input type="text" placeholder="Canal" value="${atiende}" id="atiende_${pid}" style="font-size:12px">
       <input type="text" placeholder="Proveedor" value="${empresa}" id="empresa_${pid}" style="font-size:12px">
       <div style="position:relative;display:flex;align-items:center">
         <input type="number" step="0.01" min="0" placeholder="0.00" value="${precio}" id="precio_${pid}" style="padding-right:20px;width:100%;box-sizing:border-box;font-size:12px">
